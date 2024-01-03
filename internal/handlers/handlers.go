@@ -1,10 +1,27 @@
 package handlers
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/tucuxi/invoices/internal/invoice"
+	"github.com/valyala/fasthttp"
+)
 
 func CreateInvoice() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.SendString("create invoice")
+		var i invoice.Invoice
+
+		if err := c.BodyParser(&i); err != nil {
+			return err
+		}
+		if i.Type == "" || i.Recipient == "" {
+			return c.SendStatus(fasthttp.StatusBadRequest)
+		}
+		i.ID = invoice.NewInvoiceID()
+		i.Status = invoice.Draft
+		i.DraftedAt = time.Now().Unix()
+		return c.JSON(i)
 	}
 }
 
