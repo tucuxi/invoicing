@@ -1,16 +1,15 @@
-package handlers
+package invoice
 
 import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/tucuxi/invoices/internal/invoice"
 	"github.com/valyala/fasthttp"
 )
 
 func CreateInvoice() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var i invoice.Invoice
+		var i Invoice
 
 		if err := c.BodyParser(&i); err != nil {
 			return err
@@ -18,8 +17,8 @@ func CreateInvoice() fiber.Handler {
 		if i.Type == "" || i.Recipient == "" {
 			return c.SendStatus(fasthttp.StatusBadRequest)
 		}
-		i.ID = invoice.NewInvoiceID()
-		i.Status = invoice.Draft
+		i.ID = NewInvoiceID()
+		i.Status = Draft
 		i.DraftedAt = time.Now().Unix()
 		return c.JSON(i)
 	}

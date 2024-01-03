@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/tucuxi/invoices/internal/handlers"
+	"github.com/tucuxi/invoices/internal/pkg/invoice"
 )
 
 func main() {
@@ -24,18 +24,18 @@ func main() {
 		idempotency.New(),
 	)
 
-	app.Post("/invoices", handlers.CreateInvoice())
-	app.Post("/invoices/:id", handlers.UpdateInvoice())
-	app.Get("/invoices/upcoming", handlers.RetrieveUpcomingInvoice()) // before GET "/invoices/:id"
-	app.Get("/invoices/:id", handlers.RetrieveInvoice())
-	app.Post("/invoices/:id/finalize", handlers.FinalizeInvoice())
-	app.Delete("/invoices/:id", handlers.DeleteDraftInvoice())
-	app.Post("/invoices/:id/mark_uncollectible", handlers.MarkInvoiceUncollectible())
-	app.Post("/invoices/:id/pay", handlers.PayInvoice())
-	app.Post("/invoices/:id/send", handlers.SendInvoice())
-	app.Post("/invoices/:id/void", handlers.VoidInvoice())
-	app.Post("/invoices/:id/lines/:line", handlers.UpdateLineItem())
-	app.Get("/invoices/:id/lines", handlers.RetrieveLineItems())
+	app.Post("/invoices", invoice.CreateInvoice())
+	app.Post("/invoices/:id", invoice.UpdateInvoice())
+	app.Get("/invoices/upcoming", invoice.RetrieveUpcomingInvoice()) // before GET "/invoices/:id"
+	app.Get("/invoices/:id", invoice.RetrieveInvoice())
+	app.Post("/invoices/:id/finalize", invoice.FinalizeInvoice())
+	app.Delete("/invoices/:id", invoice.DeleteDraftInvoice())
+	app.Post("/invoices/:id/mark_uncollectible", invoice.MarkInvoiceUncollectible())
+	app.Post("/invoices/:id/pay", invoice.PayInvoice())
+	app.Post("/invoices/:id/send", invoice.SendInvoice())
+	app.Post("/invoices/:id/void", invoice.VoidInvoice())
+	app.Post("/invoices/:id/lines/:line", invoice.UpdateLineItem())
+	app.Get("/invoices/:id/lines", invoice.RetrieveLineItems())
 
 	app.Listen(":3000")
 }
