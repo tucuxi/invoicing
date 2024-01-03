@@ -1,6 +1,7 @@
 package invoice
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +13,8 @@ func CreateInvoice() fiber.Handler {
 		var i Invoice
 
 		if err := c.BodyParser(&i); err != nil {
+			slog.Error("CreateInvoice", "parse body error", err)
+			c.SendStatus(fasthttp.StatusInternalServerError)
 			return err
 		}
 		if i.Type == "" || i.Recipient == "" {
