@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log/slog"
 	"slices"
 	"time"
 
@@ -16,8 +15,6 @@ func CreateInvoice(r *repository.InvoiceRepository) fiber.Handler {
 		i := new(invoice.Invoice)
 
 		if err := c.BodyParser(i); err != nil {
-			slog.Error("CreateInvoice", "parse body error", err)
-			c.SendStatus(fasthttp.StatusInternalServerError)
 			return err
 		}
 		if slices.Index(invoice.InvoiceTypes, i.Type) == -1 {
@@ -27,10 +24,9 @@ func CreateInvoice(r *repository.InvoiceRepository) fiber.Handler {
 			return c.SendStatus(fasthttp.StatusBadRequest)
 		}
 		i.ID = invoice.NewInvoiceID()
-		i.Status = invoice.Draft
+		i.Status = invoice.StatusDraft
 		i.DraftedAt = time.Now().Unix()
 		if err := r.CreateInvoice(i); err != nil {
-			c.SendStatus(fasthttp.StatusInternalServerError)
 			return err
 		}
 		return c.JSON(i)
@@ -56,11 +52,9 @@ func RetrieveInvoice(r *repository.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
 		if err == repository.ErrorInvoiceNotFound {
-			c.SendStatus(fasthttp.StatusNotFound)
-			return err
+			return c.SendStatus(fasthttp.StatusNotFound)
 		}
 		if err != nil {
-			c.SendStatus(fasthttp.StatusInternalServerError)
 			return err
 		}
 		return c.JSON(i)
@@ -85,7 +79,14 @@ func RetrieveLineItems(r *repository.InvoiceRepository) fiber.Handler {
 func DeleteDraftInvoice(r *repository.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		return c.SendString("delete draft invoice " + id)
+		switch err := r.DeleteDraftInvoice(id); err {
+		case repository.ErrorInvoiceNotFound:
+			return c.SendStatus(fasthttp.StatusNotFound)
+		case repository.ErrorDeletionNotAllowed:
+			return c.SendStatus(fasthttp.StatusBadRequest)
+		default:
+			return err
+		}
 	}
 }
 
@@ -99,7 +100,16 @@ func FinalizeInvoice(r *repository.InvoiceRepository) fiber.Handler {
 func MarkInvoiceUncollectible(r *repository.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		return c.SendString("mark invoice " + id + " uncollectible")
+		switch i, err := r.FindInvoice(id); err {
+		case nil:
+			i.Status = invoice.StatusUncollectible
+			i.MarkedUncollectibleAt = time.Now().Unix()
+			return c.JSON(i)
+		case repository.ErrorInvoiceNotFound:
+			return c.SendStatus(fasthttp.StatusNotFound)
+		default:
+			return err
+		}
 	}
 }
 
@@ -120,6 +130,15 @@ func SendInvoice(r *repository.InvoiceRepository) fiber.Handler {
 func VoidInvoice(r *repository.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		return c.SendString("void invoice " + id)
+		switch i, err := r.FindInvoice(id); err {
+		case nil:
+			i.Status = invoice.StatusVoid
+			i.VoidedAt = time.Now().Unix()
+			return c.JSON(i)
+		case repository.ErrorInvoiceNotFound:
+			return c.SendStatus(fasthttp.StatusNotFound)
+		default:
+			return err
+		}
 	}
 }

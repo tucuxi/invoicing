@@ -14,7 +14,8 @@ type InvoiceRepository struct {
 }
 
 var (
-	ErrorInvoiceNotFound = errors.New("invoice not found")
+	ErrorInvoiceNotFound    = errors.New("invoice not found")
+	ErrorDeletionNotAllowed = errors.New("deletion not allowed")
 )
 
 func NewInvoiceRepository() *InvoiceRepository {
@@ -36,4 +37,18 @@ func (r *InvoiceRepository) FindInvoice(id string) (*invoice.Invoice, error) {
 		return nil, ErrorInvoiceNotFound
 	}
 	return r.invoices[k], nil
+}
+
+func (r *InvoiceRepository) DeleteDraftInvoice(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	k := slices.IndexFunc(r.invoices, func(i *invoice.Invoice) bool { return i.ID == id })
+	if k == -1 {
+		return ErrorInvoiceNotFound
+	}
+	if r.invoices[k].Status != invoice.StatusDraft {
+		return ErrorDeletionNotAllowed
+	}
+	r.invoices = append(r.invoices[:k], r.invoices[k+1:]...)
+	return nil
 }

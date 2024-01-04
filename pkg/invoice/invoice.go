@@ -9,21 +9,21 @@ import (
 type InvoiceType string
 
 const (
-	EBill  = "ebill"
-	Plain  = "plain"
-	QRBill = "qrbill"
+	TypeEBill  = "ebill"
+	TypePlain  = "plain"
+	TypeQRBill = "qrbill"
 )
 
-var InvoiceTypes = []InvoiceType{EBill, Plain, QRBill}
+var InvoiceTypes = []InvoiceType{TypeEBill, TypePlain, TypeQRBill}
 
 type InvoiceStatus string
 
 const (
-	Draft         = "draft"
-	Open          = "open"
-	Paid          = "paid"
-	Void          = "void"
-	Uncollectible = "uncollectible"
+	StatusDraft         = "draft"
+	StatusOpen          = "open"
+	StatusPaid          = "paid"
+	StatusVoid          = "void"
+	StatusUncollectible = "uncollectible"
 )
 
 type Invoice struct {
