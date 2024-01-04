@@ -9,10 +9,12 @@ import (
 type InvoiceType string
 
 const (
+	EBill  = "ebill"
 	Plain  = "plain"
 	QRBill = "qrbill"
-	EBill  = "ebill"
 )
+
+var InvoiceTypes = []InvoiceType{EBill, Plain, QRBill}
 
 type InvoiceStatus string
 

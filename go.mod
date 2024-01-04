@@ -1,4 +1,4 @@
-module github.com/tucuxi/invoices
+module github.com/tucuxi/invoicing
 
 go 1.21.5
 
