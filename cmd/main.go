@@ -10,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/tucuxi/invoicing/internal/pkg/handlers"
-	"github.com/tucuxi/invoicing/internal/pkg/repository"
+	"github.com/tucuxi/invoicing/internal/pkg/persistence"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 		idempotency.New(),
 	)
 
-	r := repository.NewInvoiceRepository()
+	r := persistence.NewInvoiceRepository()
 
 	app.Post("/invoices", handlers.CreateInvoice(r))
 	app.Post("/invoices/:id", handlers.UpdateInvoice(r))

@@ -27,26 +27,28 @@ const (
 )
 
 type Invoice struct {
-	ID                    string        `json:"id" query:"id"`
-	Type                  InvoiceType   `json:"type" query:"type"`
-	Recipient             string        `json:"recipient" query:"recipient"`
-	Description           string        `json:"description,omitempty" query:"description"`
-	Policy                string        `json:"policy,omitempty" query:"policy"`
-	Currency              string        `json:"currency" query:"currency"`
-	Total                 int64         `json:"total" query:"total"`
-	TotalExcludingTax     int64         `json:"total_excluding_tax" query:"total_excluding_tax"`
-	TotalTaxAmount        int64         `json:"total_tax_amount" query:"total_tax_amount"`
-	StatementDescriptor   string        `json:"statement_descriptor,omitempty" query:"statement_descriptor"`
-	PaymentOrder          string        `json:"payment_order,omitempty" query:"payment_order"`
-	PeriodStart           int64         `json:"period_start,omitempty" query:"period_start"`
-	PeriodEnd             int64         `json:"period_end,omitempty" query:"period_end"`
-	DueDate               int64         `json:"due_date,omitempty" query:"due_date"`
+	ID                    string        `json:"id" form:"id"`
+	Type                  InvoiceType   `json:"type" form:"type"`
+	Recipient             string        `json:"recipient" form:"recipient"`
+	Description           string        `json:"description,omitempty" form:"description"`
+	Policy                string        `json:"policy,omitempty" form:"policy"`
+	Currency              string        `json:"currency" form:"currency"`
+	Total                 int64         `json:"total" form:"total"`
+	TotalExcludingTax     int64         `json:"total_excluding_tax" form:"total_excluding_tax"`
+	TotalTaxAmount        int64         `json:"total_tax_amount" form:"total_tax_amount"`
+	StatementDescriptor   string        `json:"statement_descriptor,omitempty" form:"statement_descriptor"`
+	PaymentOrder          string        `json:"payment_order,omitempty" form:"payment_order"`
+	PeriodStart           int64         `json:"period_start,omitempty" form:"period_start"`
+	PeriodEnd             int64         `json:"period_end,omitempty" form:"period_end"`
+	DueDate               int64         `json:"due_date,omitempty" form:"due_date"`
 	Status                InvoiceStatus `json:"status"`
 	DraftedAt             int64         `json:"drafted_at,omitempty"`
 	FinalizedAt           int64         `json:"finalized_at,omitempty"`
 	MarkedUncollectibleAt int64         `json:"marked_uncollectible_at,omitempty"`
 	PaidAt                int64         `json:"paid_at,omitempty"`
 	VoidedAt              int64         `json:"voided_at,omitempty"`
+	AmountPaid            int64         `json:"amount_paid,omitempty"`
+	PaidOutOfBand         bool          `json:"paid_out_of_band,omitempty"`
 	Source                string        `json:"source"`
 }
 

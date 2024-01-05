@@ -1,21 +1,27 @@
 package handlers
 
 import (
+	"errors"
 	"slices"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/tucuxi/invoicing/internal/pkg/repository"
+	"github.com/tucuxi/invoicing/internal/pkg/persistence"
 	"github.com/tucuxi/invoicing/pkg/invoice"
 	"github.com/valyala/fasthttp"
 )
 
-func CreateInvoice(r *repository.InvoiceRepository) fiber.Handler {
+type parameters struct {
+	PaidOutOfBand bool  `json:"paid_out_of_band" form:"paid_out_of_band"`
+	AmountPaid    int64 `json:"amount_paid" form:"amount_paid"`
+}
+
+func CreateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		i := new(invoice.Invoice)
 
-		if err := c.BodyParser(i); err != nil {
-			return err
+		if c.BodyParser(i) != nil {
+			return c.SendStatus(fasthttp.StatusBadRequest)
 		}
 		if slices.Index(invoice.InvoiceTypes, i.Type) == -1 {
 			return c.SendStatus(fasthttp.StatusBadRequest)
@@ -33,35 +39,36 @@ func CreateInvoice(r *repository.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func UpdateInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func UpdateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("update invoice " + id)
 	}
 }
 
-func RetrieveUpcomingInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func RetrieveUpcomingInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		customer := c.FormValue("customer")
 		return c.SendString("retrieve upcoming invoice for customer " + customer)
 	}
 }
 
-func RetrieveInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func RetrieveInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
-		if err == repository.ErrorInvoiceNotFound {
+		switch {
+		case err == nil:
+			return c.JSON(i)
+		case errors.Is(err, persistence.ErrorInvoiceNotFound):
 			return c.SendStatus(fasthttp.StatusNotFound)
-		}
-		if err != nil {
+		default:
 			return err
 		}
-		return c.JSON(i)
 	}
 }
 
-func UpdateLineItem(r *repository.InvoiceRepository) fiber.Handler {
+func UpdateLineItem(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		line := c.Params("line")
@@ -69,20 +76,21 @@ func UpdateLineItem(r *repository.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func RetrieveLineItems(r *repository.InvoiceRepository) fiber.Handler {
+func RetrieveLineItems(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("retrieve line items for invoice " + id)
 	}
 }
 
-func DeleteDraftInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func DeleteDraftInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		switch err := r.DeleteDraftInvoice(id); err {
-		case repository.ErrorInvoiceNotFound:
+		err := r.DeleteDraftInvoice(id)
+		switch {
+		case errors.Is(err, persistence.ErrorInvoiceNotFound):
 			return c.SendStatus(fasthttp.StatusNotFound)
-		case repository.ErrorDeletionNotAllowed:
+		case errors.Is(err, persistence.ErrorDeletionNotAllowed):
 			return c.SendStatus(fasthttp.StatusBadRequest)
 		default:
 			return err
@@ -90,14 +98,14 @@ func DeleteDraftInvoice(r *repository.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func FinalizeInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func FinalizeInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("finalize invoice " + id)
 	}
 }
 
-func MarkInvoiceUncollectible(r *repository.InvoiceRepository) fiber.Handler {
+func MarkInvoiceUncollectible(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		switch i, err := r.FindInvoice(id); err {
@@ -105,7 +113,7 @@ func MarkInvoiceUncollectible(r *repository.InvoiceRepository) fiber.Handler {
 			i.Status = invoice.StatusUncollectible
 			i.MarkedUncollectibleAt = time.Now().Unix()
 			return c.JSON(i)
-		case repository.ErrorInvoiceNotFound:
+		case persistence.ErrorInvoiceNotFound:
 			return c.SendStatus(fasthttp.StatusNotFound)
 		default:
 			return err
@@ -113,21 +121,47 @@ func MarkInvoiceUncollectible(r *repository.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func PayInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func PayInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		p := new(parameters)
+
+		if c.BodyParser(p) != nil {
+			return c.SendStatus(fasthttp.StatusBadRequest)
+		}
+		if !p.PaidOutOfBand {
+			return c.SendStatus(fasthttp.StatusNotImplemented)
+		}
+
 		id := c.Params("id")
-		return c.SendString("pay invoice " + id)
+
+		i, err := r.FindInvoice(id)
+		if errors.Is(err, persistence.ErrorInvoiceNotFound) {
+			return c.SendStatus(fasthttp.StatusNotFound)
+		}
+		if err != nil {
+			return err
+		}
+
+		i.Status = invoice.StatusPaid
+		i.PaidAt = time.Now().Unix()
+		i.PaidOutOfBand = p.PaidOutOfBand
+		i.AmountPaid = p.AmountPaid
+
+		if err = r.UpdateInvoice(i); err != nil {
+			return err
+		}
+		return c.JSON(i)
 	}
 }
 
-func SendInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func SendInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("send invoice " + id)
 	}
 }
 
-func VoidInvoice(r *repository.InvoiceRepository) fiber.Handler {
+func VoidInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		switch i, err := r.FindInvoice(id); err {
@@ -135,7 +169,7 @@ func VoidInvoice(r *repository.InvoiceRepository) fiber.Handler {
 			i.Status = invoice.StatusVoid
 			i.VoidedAt = time.Now().Unix()
 			return c.JSON(i)
-		case repository.ErrorInvoiceNotFound:
+		case persistence.ErrorInvoiceNotFound:
 			return c.SendStatus(fasthttp.StatusNotFound)
 		default:
 			return err
