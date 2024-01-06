@@ -10,7 +10,7 @@ import (
 
 type InvoiceRepository struct {
 	mu       sync.Mutex
-	invoices []invoice.Invoice
+	invoices []*invoice.Invoice
 }
 
 var (
@@ -25,36 +25,38 @@ func NewInvoiceRepository() *InvoiceRepository {
 func (r *InvoiceRepository) CreateInvoice(i *invoice.Invoice) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.invoices = append(r.invoices, *i)
+	cp := *i
+	r.invoices = append(r.invoices, &cp)
 	return nil
 }
 
 func (r *InvoiceRepository) UpdateInvoice(i *invoice.Invoice) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	k := slices.IndexFunc(r.invoices, func(j invoice.Invoice) bool { return j.ID == i.ID })
+	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == i.ID })
 	if k == -1 {
 		return ErrorInvoiceNotFound
 	}
-	r.invoices[k] = *i
+	cp := *i
+	r.invoices[k] = &cp
 	return nil
 }
 
 func (r *InvoiceRepository) FindInvoice(id string) (*invoice.Invoice, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	k := slices.IndexFunc(r.invoices, func(j invoice.Invoice) bool { return j.ID == id })
+	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == id })
 	if k == -1 {
 		return nil, ErrorInvoiceNotFound
 	}
-	i := r.invoices[k]
-	return &i, nil
+	cp := *r.invoices[k]
+	return &cp, nil
 }
 
 func (r *InvoiceRepository) DeleteDraftInvoice(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	k := slices.IndexFunc(r.invoices, func(j invoice.Invoice) bool { return j.ID == id })
+	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == id })
 	if k == -1 {
 		return ErrorInvoiceNotFound
 	}
