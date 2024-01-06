@@ -11,7 +11,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type parameters struct {
+type PayInvoiceParameters struct {
 	PaidOutOfBand bool  `json:"paid_out_of_band" form:"paid_out_of_band"`
 	AmountPaid    int64 `json:"amount_paid" form:"amount_paid"`
 }
@@ -32,7 +32,8 @@ func CreateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		i.ID = invoice.NewInvoiceID()
 		i.Status = invoice.StatusDraft
 		i.DraftedAt = time.Now().Unix()
-		if err := r.CreateInvoice(i); err != nil {
+		err := r.CreateInvoice(i)
+		if err != nil {
 			return err
 		}
 		return c.JSON(i)
@@ -42,7 +43,17 @@ func CreateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 func UpdateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		return c.SendString("update invoice " + id)
+		i, err := r.FindInvoice(id)
+		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
+			return c.SendStatus(fasthttp.StatusNotFound)
+		}
+		if err != nil {
+			return err
+		}
+		if i.Status != invoice.StatusDraft {
+			return c.SendStatus(fasthttp.StatusBadRequest)
+		}
+		return c.SendStatus(fasthttp.StatusNotImplemented)
 	}
 }
 
@@ -57,14 +68,13 @@ func RetrieveInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
-		switch {
-		case err == nil:
-			return c.JSON(i)
-		case errors.Is(err, persistence.ErrorInvoiceNotFound):
+		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
 			return c.SendStatus(fasthttp.StatusNotFound)
-		default:
+		}
+		if err != nil {
 			return err
 		}
+		return c.JSON(i)
 	}
 }
 
@@ -88,9 +98,9 @@ func DeleteDraftInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 		err := r.DeleteDraftInvoice(id)
 		switch {
-		case errors.Is(err, persistence.ErrorInvoiceNotFound):
+		case errors.Is(err, invoice.ErrorInvoiceNotFound):
 			return c.SendStatus(fasthttp.StatusNotFound)
-		case errors.Is(err, persistence.ErrorDeletionNotAllowed):
+		case errors.Is(err, invoice.ErrorDeletionNotAllowed):
 			return c.SendStatus(fasthttp.StatusBadRequest)
 		default:
 			return err
@@ -108,22 +118,26 @@ func FinalizeInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 func MarkInvoiceUncollectible(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		switch i, err := r.FindInvoice(id); err {
-		case nil:
-			i.Status = invoice.StatusUncollectible
-			i.MarkedUncollectibleAt = time.Now().Unix()
-			return c.JSON(i)
-		case persistence.ErrorInvoiceNotFound:
+		i, err := r.FindInvoice(id)
+		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
 			return c.SendStatus(fasthttp.StatusNotFound)
-		default:
+		}
+		if err != nil {
 			return err
 		}
+		i.Status = invoice.StatusUncollectible
+		i.MarkedUncollectibleAt = time.Now().Unix()
+		err = r.UpdateInvoice(i)
+		if err != nil {
+			return err
+		}
+		return c.JSON(i)
 	}
 }
 
 func PayInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		p := new(parameters)
+		p := new(PayInvoiceParameters)
 
 		if c.BodyParser(p) != nil {
 			return c.SendStatus(fasthttp.StatusBadRequest)
@@ -135,19 +149,18 @@ func PayInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 
 		i, err := r.FindInvoice(id)
-		if errors.Is(err, persistence.ErrorInvoiceNotFound) {
+		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
 			return c.SendStatus(fasthttp.StatusNotFound)
 		}
 		if err != nil {
 			return err
 		}
-
 		i.Status = invoice.StatusPaid
 		i.PaidAt = time.Now().Unix()
 		i.PaidOutOfBand = p.PaidOutOfBand
 		i.AmountPaid = p.AmountPaid
-
-		if err = r.UpdateInvoice(i); err != nil {
+		err = r.UpdateInvoice(i)
+		if err != nil {
 			return err
 		}
 		return c.JSON(i)
@@ -164,15 +177,19 @@ func SendInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 func VoidInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		switch i, err := r.FindInvoice(id); err {
-		case nil:
-			i.Status = invoice.StatusVoid
-			i.VoidedAt = time.Now().Unix()
-			return c.JSON(i)
-		case persistence.ErrorInvoiceNotFound:
+		i, err := r.FindInvoice(id)
+		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
 			return c.SendStatus(fasthttp.StatusNotFound)
-		default:
+		}
+		if err != nil {
 			return err
 		}
+		i.Status = invoice.StatusVoid
+		i.VoidedAt = time.Now().Unix()
+		err = r.UpdateInvoice(i)
+		if err != nil {
+			return err
+		}
+		return c.JSON(i)
 	}
 }

@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"errors"
 	"slices"
 	"sync"
 
@@ -12,11 +11,6 @@ type InvoiceRepository struct {
 	mu       sync.Mutex
 	invoices []*invoice.Invoice
 }
-
-var (
-	ErrorInvoiceNotFound    = errors.New("invoice not found")
-	ErrorDeletionNotAllowed = errors.New("deletion not allowed")
-)
 
 func NewInvoiceRepository() *InvoiceRepository {
 	return &InvoiceRepository{}
@@ -35,7 +29,7 @@ func (r *InvoiceRepository) UpdateInvoice(i *invoice.Invoice) error {
 	defer r.mu.Unlock()
 	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == i.ID })
 	if k == -1 {
-		return ErrorInvoiceNotFound
+		return invoice.ErrorInvoiceNotFound
 	}
 	cp := *i
 	r.invoices[k] = &cp
@@ -47,7 +41,7 @@ func (r *InvoiceRepository) FindInvoice(id string) (*invoice.Invoice, error) {
 	defer r.mu.Unlock()
 	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == id })
 	if k == -1 {
-		return nil, ErrorInvoiceNotFound
+		return nil, invoice.ErrorInvoiceNotFound
 	}
 	cp := *r.invoices[k]
 	return &cp, nil
@@ -58,10 +52,10 @@ func (r *InvoiceRepository) DeleteDraftInvoice(id string) error {
 	defer r.mu.Unlock()
 	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == id })
 	if k == -1 {
-		return ErrorInvoiceNotFound
+		return invoice.ErrorInvoiceNotFound
 	}
 	if r.invoices[k].Status != invoice.StatusDraft {
-		return ErrorDeletionNotAllowed
+		return invoice.ErrorDeletionNotAllowed
 	}
 	r.invoices = append(r.invoices[:k], r.invoices[k+1:]...)
 	return nil
