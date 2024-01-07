@@ -119,9 +119,10 @@ func DeleteDraftInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 			return c.SendStatus(fiber.StatusNotFound)
 		case errors.Is(err, invoice.ErrorDeletionNotAllowed):
 			return c.SendStatus(fiber.StatusBadRequest)
-		default:
+		case err != nil:
 			return err
 		}
+		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
 
