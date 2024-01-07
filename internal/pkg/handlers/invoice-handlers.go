@@ -52,7 +52,25 @@ func UpdateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		if i.Status != invoice.StatusDraft {
 			return c.SendStatus(fiber.StatusBadRequest)
 		}
-		return c.SendStatus(fiber.StatusNotImplemented)
+		j := *i
+		err = c.BodyParser(&j)
+		if err != nil {
+			return err
+		}
+		if j.ID != i.ID ||
+			j.Type != i.Type ||
+			j.DraftedAt != i.DraftedAt ||
+			j.PaidAt != i.PaidAt ||
+			j.VoidedAt != i.VoidedAt ||
+			j.MarkedUncollectibleAt != i.MarkedUncollectibleAt {
+
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		err = r.UpdateInvoice(&j)
+		if err != nil {
+			return err
+		}
+		return c.JSON(&j)
 	}
 }
 

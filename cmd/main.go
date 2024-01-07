@@ -14,7 +14,9 @@ import (
 )
 
 func main() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		Immutable: true,
+	})
 
 	limiterConfig := limiter.Config{
 		Max:        5,
