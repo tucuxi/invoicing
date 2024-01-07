@@ -5,7 +5,6 @@ go 1.21.5
 require (
 	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/segmentio/ksuid v1.0.4
-	github.com/valyala/fasthttp v1.51.0
 )
 
 require (
@@ -19,6 +18,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 )

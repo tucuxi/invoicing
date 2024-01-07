@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/tucuxi/invoicing/internal/pkg/persistence"
 	"github.com/tucuxi/invoicing/pkg/invoice"
-	"github.com/valyala/fasthttp"
 )
 
 type PayInvoiceParameters struct {
@@ -21,13 +20,13 @@ func CreateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		i := new(invoice.Invoice)
 
 		if c.BodyParser(i) != nil {
-			return c.SendStatus(fasthttp.StatusBadRequest)
+			return c.SendStatus(fiber.StatusBadRequest)
 		}
 		if slices.Index(invoice.InvoiceTypes, i.Type) == -1 {
-			return c.SendStatus(fasthttp.StatusBadRequest)
+			return c.SendStatus(fiber.StatusBadRequest)
 		}
 		if i.Recipient == "" {
-			return c.SendStatus(fasthttp.StatusBadRequest)
+			return c.SendStatus(fiber.StatusBadRequest)
 		}
 		i.ID = invoice.NewInvoiceID()
 		i.Status = invoice.StatusDraft
@@ -45,15 +44,15 @@ func UpdateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
 		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
-			return c.SendStatus(fasthttp.StatusNotFound)
+			return c.SendStatus(fiber.StatusNotFound)
 		}
 		if err != nil {
 			return err
 		}
 		if i.Status != invoice.StatusDraft {
-			return c.SendStatus(fasthttp.StatusBadRequest)
+			return c.SendStatus(fiber.StatusBadRequest)
 		}
-		return c.SendStatus(fasthttp.StatusNotImplemented)
+		return c.SendStatus(fiber.StatusNotImplemented)
 	}
 }
 
@@ -69,7 +68,7 @@ func RetrieveInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
 		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
-			return c.SendStatus(fasthttp.StatusNotFound)
+			return c.SendStatus(fiber.StatusNotFound)
 		}
 		if err != nil {
 			return err
@@ -99,9 +98,9 @@ func DeleteDraftInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		err := r.DeleteDraftInvoice(id)
 		switch {
 		case errors.Is(err, invoice.ErrorInvoiceNotFound):
-			return c.SendStatus(fasthttp.StatusNotFound)
+			return c.SendStatus(fiber.StatusNotFound)
 		case errors.Is(err, invoice.ErrorDeletionNotAllowed):
-			return c.SendStatus(fasthttp.StatusBadRequest)
+			return c.SendStatus(fiber.StatusBadRequest)
 		default:
 			return err
 		}
@@ -120,7 +119,7 @@ func MarkInvoiceUncollectible(r *persistence.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
 		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
-			return c.SendStatus(fasthttp.StatusNotFound)
+			return c.SendStatus(fiber.StatusNotFound)
 		}
 		if err != nil {
 			return err
@@ -140,17 +139,17 @@ func PayInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		p := new(PayInvoiceParameters)
 
 		if c.BodyParser(p) != nil {
-			return c.SendStatus(fasthttp.StatusBadRequest)
+			return c.SendStatus(fiber.StatusBadRequest)
 		}
 		if !p.PaidOutOfBand {
-			return c.SendStatus(fasthttp.StatusNotImplemented)
+			return c.SendStatus(fiber.StatusNotImplemented)
 		}
 
 		id := c.Params("id")
 
 		i, err := r.FindInvoice(id)
 		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
-			return c.SendStatus(fasthttp.StatusNotFound)
+			return c.SendStatus(fiber.StatusNotFound)
 		}
 		if err != nil {
 			return err
@@ -179,7 +178,7 @@ func VoidInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
 		if errors.Is(err, invoice.ErrorInvoiceNotFound) {
-			return c.SendStatus(fasthttp.StatusNotFound)
+			return c.SendStatus(fiber.StatusNotFound)
 		}
 		if err != nil {
 			return err
