@@ -45,6 +45,6 @@ func main() {
 	app.Get("/invoices/:id/lines", handlers.RetrieveLineItems(r))
 
 	if err := app.Listen(":3000"); err != nil {
-		slog.Error("Listen", err)
+		slog.Error("Listen", err.Error())
 	}
 }
