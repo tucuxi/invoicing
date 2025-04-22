@@ -1,6 +1,6 @@
 module github.com/tucuxi/invoicing
 
-go 1.24
+go 1.24.2
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.5
