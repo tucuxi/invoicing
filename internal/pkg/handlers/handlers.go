@@ -15,7 +15,7 @@ type PayInvoiceParameters struct {
 	AmountPaid    int64 `json:"amount_paid" form:"amount_paid"`
 }
 
-func CreateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func CreateInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		i := new(invoice.Invoice)
 
@@ -39,7 +39,7 @@ func CreateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func UpdateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func UpdateInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
@@ -74,14 +74,14 @@ func UpdateInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func RetrieveUpcomingInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func RetrieveUpcomingInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		customer := c.FormValue("customer")
 		return c.SendString("retrieve upcoming invoice for customer " + customer)
 	}
 }
 
-func RetrieveInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func RetrieveInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
@@ -95,7 +95,7 @@ func RetrieveInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func UpdateLineItem(r *persistence.InvoiceRepository) fiber.Handler {
+func UpdateLineItem(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		line := c.Params("line")
@@ -103,14 +103,14 @@ func UpdateLineItem(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func RetrieveLineItems(r *persistence.InvoiceRepository) fiber.Handler {
+func RetrieveLineItems(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("retrieve line items for invoice " + id)
 	}
 }
 
-func DeleteDraftInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func DeleteDraftInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		err := r.DeleteDraftInvoice(id)
@@ -126,14 +126,14 @@ func DeleteDraftInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func FinalizeInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func FinalizeInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("finalize invoice " + id)
 	}
 }
 
-func MarkInvoiceUncollectible(r *persistence.InvoiceRepository) fiber.Handler {
+func MarkInvoiceUncollectible(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)
@@ -153,7 +153,7 @@ func MarkInvoiceUncollectible(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func PayInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func PayInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		p := new(PayInvoiceParameters)
 
@@ -185,14 +185,14 @@ func PayInvoice(r *persistence.InvoiceRepository) fiber.Handler {
 	}
 }
 
-func SendInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func SendInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		return c.SendString("send invoice " + id)
 	}
 }
 
-func VoidInvoice(r *persistence.InvoiceRepository) fiber.Handler {
+func VoidInvoice(r persistence.InvoiceRepository) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		i, err := r.FindInvoice(id)

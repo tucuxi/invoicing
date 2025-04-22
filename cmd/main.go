@@ -29,7 +29,7 @@ func main() {
 		idempotency.New(),
 	)
 
-	r := persistence.NewInvoiceRepository()
+	r := persistence.NewTransientRepository()
 
 	app.Post("/invoices", handlers.CreateInvoice(r))
 	app.Post("/invoices/:id", handlers.UpdateInvoice(r))

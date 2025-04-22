@@ -7,16 +7,16 @@ import (
 	"github.com/tucuxi/invoicing/pkg/invoice"
 )
 
-type InvoiceRepository struct {
+type TransientRepository struct {
 	mu       sync.Mutex
 	invoices []*invoice.Invoice
 }
 
-func NewInvoiceRepository() *InvoiceRepository {
-	return &InvoiceRepository{}
+func NewTransientRepository() *TransientRepository {
+	return &TransientRepository{}
 }
 
-func (r *InvoiceRepository) CreateInvoice(i *invoice.Invoice) error {
+func (r *TransientRepository) CreateInvoice(i *invoice.Invoice) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	cp := *i
@@ -24,7 +24,7 @@ func (r *InvoiceRepository) CreateInvoice(i *invoice.Invoice) error {
 	return nil
 }
 
-func (r *InvoiceRepository) UpdateInvoice(i *invoice.Invoice) error {
+func (r *TransientRepository) UpdateInvoice(i *invoice.Invoice) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == i.ID })
@@ -36,7 +36,7 @@ func (r *InvoiceRepository) UpdateInvoice(i *invoice.Invoice) error {
 	return nil
 }
 
-func (r *InvoiceRepository) FindInvoice(id string) (*invoice.Invoice, error) {
+func (r *TransientRepository) FindInvoice(id string) (*invoice.Invoice, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == id })
@@ -47,7 +47,7 @@ func (r *InvoiceRepository) FindInvoice(id string) (*invoice.Invoice, error) {
 	return &cp, nil
 }
 
-func (r *InvoiceRepository) DeleteDraftInvoice(id string) error {
+func (r *TransientRepository) DeleteDraftInvoice(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	k := slices.IndexFunc(r.invoices, func(j *invoice.Invoice) bool { return j.ID == id })
