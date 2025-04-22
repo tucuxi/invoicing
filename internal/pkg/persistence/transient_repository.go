@@ -12,7 +12,7 @@ type TransientRepository struct {
 	invoices []*invoice.Invoice
 }
 
-func NewTransientRepository() *TransientRepository {
+func NewTransientRepository() InvoiceRepository {
 	return &TransientRepository{}
 }
 
