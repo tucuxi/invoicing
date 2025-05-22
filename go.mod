@@ -3,7 +3,7 @@ module github.com/tucuxi/invoicing
 go 1.24.2
 
 require (
-	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/gofiber/fiber/v2 v2.52.7
 	github.com/segmentio/ksuid v1.0.4
 )
 
